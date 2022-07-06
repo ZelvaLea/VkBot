@@ -7,7 +7,6 @@ import zelvalea.bot.sdk.TransportClient;
 import zelvalea.bot.sdk.longpoll.LongPollClient;
 import zelvalea.bot.sdk.request.longpoll.GroupLongPollServerRequest;
 import java.net.http.HttpClient;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,10 +29,10 @@ public class Bot {
         this.longPoll = new LongPollClient(httpTransport, eventHandler);
     }
 
-    private CompletableFuture<Void> postFire() {
+    private void postFire() {
         var d =
                 httpTransport.sendRequest(new GroupLongPollServerRequest(actor.id()));
-        return d.handle((r,t) -> {
+        d.handle((r, t) -> {
             if (t != null) {
                 LOGGER.log(Level.SEVERE, "A connection error has occurred");
                 return null;
