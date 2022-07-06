@@ -47,7 +47,7 @@ public class Bot {
         });
     }
 
-    private void tryFire(String server, String key, String ts) {
+    private void tryFire(String server, String key, int ts) {
         longPoll.postEvents(server, key, ts)
                 .whenComplete((r,t) -> {
                     if (t == null)

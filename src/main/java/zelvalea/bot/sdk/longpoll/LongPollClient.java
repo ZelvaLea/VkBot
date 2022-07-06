@@ -37,7 +37,7 @@ public class LongPollClient {
     public CompletableFuture<LongPollClient.LongPollResponse> postEvents(
             String server,
             String key,
-            String timestamp) {
+            int timestamp) {
         URI uri;
         try {
             uri = new URI(String.format(
@@ -82,10 +82,10 @@ public class LongPollClient {
         }
     }
     public static final class LongPollResponse {
-        private String ts;
+        private int ts;
         private List<VkEvent> updates;
 
-        public String getTimestamp() {
+        public int getTimestamp() {
             return ts;
         }
 

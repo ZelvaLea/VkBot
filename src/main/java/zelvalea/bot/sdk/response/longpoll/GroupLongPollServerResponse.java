@@ -10,13 +10,13 @@ public class GroupLongPollServerResponse
 
         private String server;
 
-        private String ts;
+        private int ts;
 
 
         public String getKey() {return key;}
 
         public String getServer() {return server;}
 
-        public String getTs() {return ts;}
+        public int getTs() {return ts;}
     }
 }
