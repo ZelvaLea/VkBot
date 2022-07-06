@@ -31,20 +31,21 @@ public class Bot {
     }
 
     private void postFire() {
-        var d =
-                httpTransport.sendRequest(new GroupLongPollServerRequest(actor.id()));
-        d.whenComplete((r, t) -> {
-            if (t != null) {
-                LOGGER.log(Level.SEVERE, "A connection error has occurred");
-                postFire();
-            } else {
-                var response = r.getResponse();
-                tryFire(response.getServer(),
-                        response.getKey(),
-                        response.getTs()
-                );
-            }
-        });
+        httpTransport
+                .sendRequest(new GroupLongPollServerRequest(actor.id()))
+                .whenComplete((r,t) -> {
+                    if (t != null) {
+                        LOGGER.log(Level.SEVERE, "A connection error has occurred");
+                        postFire();
+                    } else {
+                        var response
+                                = r.getResponse();
+                        tryFire(response.getServer(),
+                                response.getKey(),
+                                response.getTs()
+                        );
+                    }
+                });
     }
 
     private void tryFire(String server, String key, int ts) {
