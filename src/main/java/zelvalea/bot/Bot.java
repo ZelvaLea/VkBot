@@ -35,13 +35,14 @@ public class Bot {
         d.handle((r, t) -> {
             if (t != null) {
                 LOGGER.log(Level.SEVERE, "A connection error has occurred");
-                return null;
+                postFire();
+            } else {
+                var response = r.getResponse();
+                tryFire(response.getServer(),
+                        response.getKey(),
+                        response.getTs()
+                );
             }
-            var response = r.getResponse();
-            tryFire(response.getServer(),
-                    response.getKey(),
-                    response.getTs()
-            );
             return null;
         });
     }
