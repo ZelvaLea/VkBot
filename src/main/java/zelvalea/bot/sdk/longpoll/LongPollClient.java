@@ -4,8 +4,8 @@ import com.google.gson.*;
 import zelvalea.bot.events.AbstractEvent;
 import zelvalea.bot.events.Event;
 import zelvalea.bot.events.EventHandler;
-import zelvalea.bot.sdk.TransportClient;
 import zelvalea.bot.events.messages.NewMessageEvent;
+import zelvalea.bot.sdk.TransportClient;
 import zelvalea.bot.sdk.objects.VkEvent;
 
 import java.lang.reflect.Type;
@@ -24,7 +24,6 @@ public class LongPollClient {
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(VkEvent.class, new EventDeserializer())
             .create();
-
     private final TransportClient httpClient;
     private final EventHandler eventHandler;
 
@@ -54,7 +53,12 @@ public class LongPollClient {
         var h = httpClient.client()
                 .sendAsync(hr, HttpResponse.BodyHandlers.ofString())
                 .thenApply(r -> GSON.fromJson(r.body(), LongPollResponse.class));
-        h.thenAcceptAsync(r -> r.getEvents().forEach(x -> eventHandler.callEvent(x.object())));
+
+        // ForkJoinPool executor for event handling is nice
+        h.thenAcceptAsync(r -> r
+                .getEvents()
+                .forEach(x -> eventHandler.callEvent(x.object())
+        ));
         return h;
     }
     private static class EventDeserializer implements JsonDeserializer<VkEvent> {

@@ -2,6 +2,8 @@ package zelvalea.bot.commands;
 
 import zelvalea.bot.events.EventHandler;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,5 +28,9 @@ public class CommandHandler {
 
     public Optional<Command> getCommand(String name) {
         return Optional.ofNullable(commandMap.get(name));
+    }
+
+    public Map<String, Command> getCommandMap() {
+        return Collections.unmodifiableMap(commandMap);
     }
 }
