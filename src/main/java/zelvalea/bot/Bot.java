@@ -33,7 +33,7 @@ public class Bot {
     private void postFire() {
         var d =
                 httpTransport.sendRequest(new GroupLongPollServerRequest(actor.id()));
-        d.handle((r, t) -> {
+        d.whenComplete((r, t) -> {
             if (t != null) {
                 LOGGER.log(Level.SEVERE, "A connection error has occurred");
                 postFire();
@@ -44,7 +44,6 @@ public class Bot {
                         response.getTs()
                 );
             }
-            return null;
         });
     }
 
