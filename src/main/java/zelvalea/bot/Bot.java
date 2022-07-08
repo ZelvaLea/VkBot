@@ -8,10 +8,13 @@ import zelvalea.bot.sdk.longpoll.LongPollClient;
 import zelvalea.bot.sdk.request.longpoll.GroupLongPollServerRequest;
 
 import java.net.http.HttpClient;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Bot {
+public class Bot extends Thread {
+    private static final AtomicInteger ids = new AtomicInteger();
     public static final Logger LOGGER = Logger.getLogger("Bot");
     private final EventHandler eventHandler;
     private final CommandHandler commandHandler;
@@ -20,6 +23,7 @@ public class Bot {
     private final Actor actor;
 
     public Bot(Actor actor) {
+        super("Bot-Worker-"+ids.getAndIncrement());
         this.actor = actor;
         this.httpTransport = new TransportClient(
                 HttpClient.newBuilder().build(),
@@ -30,9 +34,7 @@ public class Bot {
         this.longPoll = new LongPollClient(httpTransport, eventHandler);
     }
 
-    // todo: sync?
-
-    private void postFire() {
+    private void postFire() { // sync?
         httpTransport
                 .sendRequest(new GroupLongPollServerRequest(actor.id()))
                 .whenComplete((r,t) -> {
@@ -49,9 +51,8 @@ public class Bot {
                     }
                 });
     }
-    // todo: sync?
 
-    private void tryFire(String server, String key, int ts) {
+    private void tryFire(String server, String key, int ts) { // sync?
         longPoll.postEvents(server, key, ts)
                 .whenComplete((r,t) -> {
                     if (t == null)
@@ -61,9 +62,19 @@ public class Bot {
                 });
     }
 
-    public void start() throws InterruptedException {
+    @Override
+    public void run() {
         postFire();
-        Thread.currentThread().join();
+        try {
+            join();
+        } catch (InterruptedException e) {
+            try {
+                wait(TimeUnit.SECONDS.toMillis(10));
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+            postFire();
+        }
     }
 
     public CommandHandler getCommandHandler() {
