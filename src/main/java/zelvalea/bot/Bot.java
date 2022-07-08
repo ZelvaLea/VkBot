@@ -70,14 +70,7 @@ public class Bot extends Thread {
         postFire();
         try {
             join();
-        } catch (InterruptedException e) {
-            try {
-                wait(TimeUnit.SECONDS.toMillis(10));
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-            postFire();
-        }
+        } catch (InterruptedException e) {}
     }
 
     public CommandHandler getCommandHandler() {
