@@ -49,8 +49,9 @@ public record LongPollClient(
         ));
         return h;
     }
-    private static class EventDeserializer implements JsonDeserializer<LongPollEvent> {
-        static final Map<String, Class<? extends Event>> mapEvents = Map.of(
+    private static class EventDeserializer
+            implements JsonDeserializer<LongPollEvent> {
+        static final Map<String, Class<? extends Event>> MAP_EVENTS = Map.of(
                 "message_new", NewMessageEvent.class
         );
 
@@ -66,7 +67,7 @@ public record LongPollClient(
             String eName = ajo.get("type").getAsString();
 
             Class<? extends Event> eType =
-                    mapEvents.getOrDefault(eName, AbstractEvent.class);
+                    MAP_EVENTS.getOrDefault(eName, AbstractEvent.class);
             return new LongPollEvent(
                     eName,
                     context.deserialize(ajo.get("object"), eType)
