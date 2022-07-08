@@ -8,12 +8,11 @@ import zelvalea.bot.sdk.longpoll.LongPollClient;
 import zelvalea.bot.sdk.request.longpoll.GroupLongPollServerRequest;
 
 import java.net.http.HttpClient;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Bot extends Thread {
+public class Bot extends Thread { // todo: Fiber
     public static final Logger LOGGER = Logger.getLogger("Bot");
 
     private static final AtomicInteger ids = new AtomicInteger();
@@ -35,7 +34,7 @@ public class Bot extends Thread {
         this.longPoll = new LongPollClient(httpTransport, eventHandler);
     }
 
-    private void postFire() { // sync?
+    private void postFire() { // lock?
         httpTransport
                 .sendRequest(new GroupLongPollServerRequest(actor.id()))
                 .whenComplete((r,t) -> {
@@ -53,7 +52,7 @@ public class Bot extends Thread {
                 });
     }
 
-    private void tryFire(String server, String key, int ts) { // sync?
+    private void tryFire(String server, String key, int ts) { // lock?
         if (super.isInterrupted())
             return;
         longPoll.postEvents(server, key, ts)
