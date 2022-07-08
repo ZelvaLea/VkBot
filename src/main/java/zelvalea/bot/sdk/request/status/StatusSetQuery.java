@@ -5,12 +5,9 @@ import zelvalea.bot.sdk.request.Request;
 public final class StatusSetQuery
         extends Request<Integer> {
 
-    public StatusSetQuery() {
+    public StatusSetQuery(String text) {
         super("status.set");
-    }
-    public StatusSetQuery text(String value) {
-        addParam("text", value);
-        return this;
+        addParam("text", text);
     }
     public StatusSetQuery groupId(int value) {
         addParam("group_id", value);

@@ -16,21 +16,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class LongPollClient {
+public record LongPollClient(
+        TransportClient httpClient,
+        EventHandler eventHandler
+) {
     private static final String LP_QUERY =
             "%s?act=a_check&key=%s&ts=%s&wait=%d";
     private static final int WAIT_TIME = 25;
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(LongPollEvent.class, new EventDeserializer())
             .create();
-    private final TransportClient httpClient;
-    private final EventHandler eventHandler;
-
-    public LongPollClient(TransportClient httpClient,
-                          EventHandler eventHandler) {
-        this.httpClient = httpClient;
-        this.eventHandler = eventHandler;
-    }
 
     public CompletableFuture<LongPollClient.LongPollResponse> postEvents(
             String server,

@@ -30,6 +30,8 @@ public class Bot {
         this.longPoll = new LongPollClient(httpTransport, eventHandler);
     }
 
+    // todo: sync?
+
     private void postFire() {
         httpTransport
                 .sendRequest(new GroupLongPollServerRequest(actor.id()))
@@ -47,6 +49,7 @@ public class Bot {
                     }
                 });
     }
+    // todo: sync?
 
     private void tryFire(String server, String key, int ts) {
         longPoll.postEvents(server, key, ts)

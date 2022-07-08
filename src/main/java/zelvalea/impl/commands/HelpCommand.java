@@ -20,7 +20,7 @@ public record HelpCommand(Bot bot) implements Command {
                     String desc = v.getDescription();
                     if (desc == null || desc.isEmpty())
                         return;
-                    builder.append('/').append(v.getName())
+                    builder.append('/').append(k)
                             .append(" - ").append(desc)
                             .append('\n');
                 });
