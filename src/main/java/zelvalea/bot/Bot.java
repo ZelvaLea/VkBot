@@ -14,8 +14,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Bot extends Thread {
-    private static final AtomicInteger ids = new AtomicInteger();
     public static final Logger LOGGER = Logger.getLogger("Bot");
+
+    private static final AtomicInteger ids = new AtomicInteger();
     private final EventHandler eventHandler;
     private final CommandHandler commandHandler;
     private final LongPollClient longPoll;
