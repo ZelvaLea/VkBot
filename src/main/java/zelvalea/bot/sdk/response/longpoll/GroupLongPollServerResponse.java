@@ -2,7 +2,7 @@ package zelvalea.bot.sdk.response.longpoll;
 
 import zelvalea.bot.sdk.response.Response;
 
-public class GroupLongPollServerResponse
+public final class GroupLongPollServerResponse
         extends Response<GroupLongPollServerResponse.GroupLongPollServerData> {
 
     public static final class GroupLongPollServerData {

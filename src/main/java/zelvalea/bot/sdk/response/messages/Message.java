@@ -4,7 +4,6 @@ public class Message {
     private int id;
     private int date;
     private int peer_id;
-
     private int from_id;
     private String text;
 

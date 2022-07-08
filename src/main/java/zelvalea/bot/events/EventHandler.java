@@ -11,13 +11,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 public class EventHandler {
-    private final ConcurrentMap<EventPriority, EventProcessor> handlers =
+    private final ConcurrentMap<EventPriority, EventConsumers> handlers =
             new ConcurrentEnumMap<>(EventPriority.class);
 
     @SuppressWarnings("unchecked")
     public void registerEvent(Listener listener) {
         Class<?> klass = listener.getClass();
         for (Method method : klass.getDeclaredMethods()) {
+            method.setAccessible(true);
             if (!method.isAnnotationPresent(EventLabel.class) ||
                     method.getParameterCount() < 1) {
                 continue;
@@ -28,8 +29,8 @@ public class EventHandler {
             }
             EventLabel label = method.getAnnotation(EventLabel.class);
             handlers.computeIfAbsent(
-                    label.priority(), f -> new EventProcessor()
-            ).addProcessor((Class<? extends Event>) e_type,
+                    label.priority(), f -> new EventConsumers()
+            ).addConsumer((Class<? extends Event>) e_type,
                     event -> {
                         if (event instanceof Cancellable r &&
                                 r.isCancelled() &&
@@ -54,11 +55,12 @@ public class EventHandler {
         });
     }
 
-    private static class EventProcessor {
+
+    private static class EventConsumers {
         final ConcurrentMap<Class<? extends Event>, Queue<Consumer<Event>>> map
                 = new ConcurrentHashMap<>();
 
-        void addProcessor(Class<? extends Event> type, Consumer<Event> handler) {
+        void addConsumer(Class<? extends Event> type, Consumer<Event> handler) {
             map.computeIfAbsent(
                     type,
                     x -> new ConcurrentLinkedQueue<>()

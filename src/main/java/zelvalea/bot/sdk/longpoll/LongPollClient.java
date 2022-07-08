@@ -6,11 +6,10 @@ import zelvalea.bot.events.Event;
 import zelvalea.bot.events.EventHandler;
 import zelvalea.bot.events.messages.NewMessageEvent;
 import zelvalea.bot.sdk.TransportClient;
-import zelvalea.bot.sdk.objects.VkEvent;
+import zelvalea.bot.sdk.objects.LongPollEvent;
 
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
@@ -22,7 +21,7 @@ public class LongPollClient {
             "%s?act=a_check&key=%s&ts=%s&wait=%d";
     private static final int WAIT_TIME = 25;
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(VkEvent.class, new EventDeserializer())
+            .registerTypeAdapter(LongPollEvent.class, new EventDeserializer())
             .create();
     private final TransportClient httpClient;
     private final EventHandler eventHandler;
@@ -37,15 +36,9 @@ public class LongPollClient {
             String server,
             String key,
             int timestamp) {
-        URI uri;
-        try {
-            uri = new URI(String.format(
-                    LP_QUERY,
-                    server, key, timestamp, WAIT_TIME
-            ));
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        URI uri = URI.create(String.format(LP_QUERY,
+                server, key, timestamp, WAIT_TIME
+        ));
         HttpRequest hr = HttpRequest
                 .newBuilder(uri)
                 .GET()
@@ -61,13 +54,13 @@ public class LongPollClient {
         ));
         return h;
     }
-    private static class EventDeserializer implements JsonDeserializer<VkEvent> {
+    private static class EventDeserializer implements JsonDeserializer<LongPollEvent> {
         static final Map<String, Class<? extends Event>> mapEvents = Map.of(
                 "message_new", NewMessageEvent.class
         );
 
         @Override
-        public VkEvent deserialize(
+        public LongPollEvent deserialize(
                 JsonElement jsonElement,
                 Type type,
                 JsonDeserializationContext context)
@@ -78,8 +71,8 @@ public class LongPollClient {
             String eName = ajo.get("type").getAsString();
 
             Class<? extends Event> eType =
-                    mapEvents.getOrDefault(eName, AbstractEvent.class);;
-            return new VkEvent(
+                    mapEvents.getOrDefault(eName, AbstractEvent.class);
+            return new LongPollEvent(
                     eName,
                     context.deserialize(ajo.get("object"), eType)
             );
@@ -87,13 +80,13 @@ public class LongPollClient {
     }
     public static final class LongPollResponse {
         private int ts;
-        private List<VkEvent> updates;
+        private List<LongPollEvent> updates;
 
         public int getTimestamp() {
             return ts;
         }
 
-        public List<VkEvent> getEvents() {
+        public List<LongPollEvent> getEvents() {
             return updates;
         }
     }
