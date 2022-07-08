@@ -54,6 +54,8 @@ public class Bot extends Thread {
     }
 
     private void tryFire(String server, String key, int ts) { // sync?
+        if (super.isInterrupted())
+            return;
         longPoll.postEvents(server, key, ts)
                 .whenComplete((r,t) -> {
                     if (t == null)
