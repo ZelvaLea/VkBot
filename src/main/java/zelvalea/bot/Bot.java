@@ -70,7 +70,7 @@ public class Bot extends Thread {
         postFire();
         try {
             join();
-        } catch (InterruptedException e) {}
+        } catch (InterruptedException ignored) {}
     }
 
     public CommandHandler getCommandHandler() {
