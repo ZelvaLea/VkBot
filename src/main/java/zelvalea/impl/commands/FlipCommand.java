@@ -13,7 +13,7 @@ public record FlipCommand(Bot bot) implements Command {
     public CompletableFuture<Integer> execute(String[] args, NewMessageEvent event) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
 
-        return bot.getHttpTransport().sendRequest(new MessagesSendQuery(
+        return bot.getHttpTransport().sendRequestAsync(new MessagesSendQuery(
                 r.nextBoolean() ? "Орел" : "Решка",
                 event.getMessage().getPeerId(),
                 r.nextInt())

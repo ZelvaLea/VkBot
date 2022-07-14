@@ -21,7 +21,7 @@ public record HealthCommand(Bot bot) implements Command {
         sb.append("- use: ").append(parseMemorySize(Runtime.getRuntime().freeMemory())).append('\n');
         sb.append("- capacity: ").append(parseMemorySize(Runtime.getRuntime().totalMemory())).append('\n');
         sb.append("- max capacity: ").append(parseMemorySize(Runtime.getRuntime().maxMemory()));
-        return bot.getHttpTransport().sendRequest(new MessagesSendQuery(
+        return bot.getHttpTransport().sendRequestAsync(new MessagesSendQuery(
                 sb.toString(),
                 event.getMessage().getPeerId(),
                 ThreadLocalRandom.current().nextInt()

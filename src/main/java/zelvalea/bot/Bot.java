@@ -7,12 +7,13 @@ import zelvalea.bot.sdk.TransportClient;
 import zelvalea.bot.sdk.longpoll.LongPollClient;
 import zelvalea.bot.sdk.request.longpoll.GroupLongPollServerRequest;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Bot extends Thread { // todo: Fiber
+public class Bot extends Thread { // todo: Fiber?
     public static final Logger LOGGER = Logger.getLogger("Bot");
 
     private static final AtomicInteger ids = new AtomicInteger();
@@ -34,9 +35,9 @@ public class Bot extends Thread { // todo: Fiber
         this.longPoll = new LongPollClient(httpTransport, eventHandler);
     }
 
-    private void postFire() { // lock?
+    private void postFire() {
         httpTransport
-                .sendRequest(new GroupLongPollServerRequest(actor.id()))
+                .sendRequestAsync(new GroupLongPollServerRequest(actor.id()))
                 .whenComplete((r,t) -> {
                     if (t != null) {
                         LOGGER.log(Level.SEVERE, "A connection error has occurred");
@@ -52,16 +53,16 @@ public class Bot extends Thread { // todo: Fiber
                 });
     }
 
-    private void tryFire(String server, String key, int ts) { // lock?
+    private void tryFire(String server, String key, int ts) {
         if (super.isInterrupted())
             return;
-        longPoll.postEvents(server, key, ts)
-                .whenComplete((r,t) -> {
-                    if (t == null)
-                        tryFire(server,key,r.getTimestamp());
-                    else
-                        postFire();
-                });
+        try {
+            var r
+                    = longPoll.postEvents(server,key,ts);
+            tryFire(server,key,r.getTimestamp());
+        } catch (IOException | InterruptedException e) {
+            postFire();
+        }
     }
 
     @Override

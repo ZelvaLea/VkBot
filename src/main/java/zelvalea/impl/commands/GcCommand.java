@@ -22,7 +22,7 @@ public record GcCommand(Bot bot) implements Command {
     @Override
     public CompletableFuture<?> execute(String[] args, NewMessageEvent event) {
         System.gc();
-        return bot.getHttpTransport().sendRequest(new MessagesSendQuery(
+        return bot.getHttpTransport().sendRequestAsync(new MessagesSendQuery(
                 "garbage collection completed",
                 event.getMessage().getPeerId(),
                 ThreadLocalRandom.current().nextInt()

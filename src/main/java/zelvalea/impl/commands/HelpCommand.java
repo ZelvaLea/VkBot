@@ -24,7 +24,7 @@ public record HelpCommand(Bot bot) implements Command {
                             .append(" - ").append(desc)
                             .append('\n');
                 });
-        return bot.getHttpTransport().sendRequest(new MessagesSendQuery(
+        return bot.getHttpTransport().sendRequestAsync(new MessagesSendQuery(
                 builder.toString(),
                 event.getMessage().getPeerId(),
                 ThreadLocalRandom.current().nextInt()
