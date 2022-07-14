@@ -46,7 +46,7 @@ public record LongPollClient(
         var res_obj =
                 GSON.fromJson(response.body(), LongPollResponse.class);
         // ForkJoinPool executor for event handling is nice
-        res_obj.getEvents()
+        res_obj.events()
                 .stream()
                 .parallel()
                 .forEach(x -> eventHandler.callEvent(x.object()));
@@ -81,11 +81,11 @@ public record LongPollClient(
         private int ts;
         private LinkedList<LongPollEvent> updates;
 
-        public int getTimestamp() {
+        public int timestamp() {
             return ts;
         }
 
-        public List<LongPollEvent> getEvents() {
+        public List<LongPollEvent> events() {
             return updates;
         }
     }

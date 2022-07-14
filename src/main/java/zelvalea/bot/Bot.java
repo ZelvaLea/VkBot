@@ -57,9 +57,8 @@ public class Bot extends Thread { // todo: Fiber?
         if (super.isInterrupted())
             return;
         try {
-            var r
-                    = longPoll.postEvents(server,key,ts);
-            tryFire(server,key,r.getTimestamp());
+            var r = longPoll.postEvents(server,key,ts);
+            tryFire(server,key,r.timestamp());
         } catch (IOException | InterruptedException e) {
             postFire();
         }
