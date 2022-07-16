@@ -1,6 +1,6 @@
 package zelvalea.bot.sdk.objects;
 
-public final class ApiError {
+public class ApiError {
     private int error_code;
     private String error_msg;
 
