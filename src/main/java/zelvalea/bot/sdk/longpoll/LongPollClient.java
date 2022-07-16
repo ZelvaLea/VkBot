@@ -47,8 +47,7 @@ public record LongPollClient(
                 GSON.fromJson(response.body(), LongPollResponse.class);
         // ForkJoinPool executor for event handling is nice
         res_obj.events()
-                .stream()
-                .parallel()
+                .parallelStream()
                 .forEach(x -> eventHandler.callEvent(x.object()));
         return res_obj;
     }
