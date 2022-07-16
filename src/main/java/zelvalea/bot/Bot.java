@@ -23,16 +23,16 @@ public class Bot extends Thread { // todo: Fiber?
     private final TransportClient httpTransport;
     private final Actor actor;
 
-    public Bot(Actor actor) {
+    public Bot(HttpClient httpClient, Actor actor) {
         super("Bot-Worker-"+ids.getAndIncrement());
         this.actor = actor;
         this.httpTransport = new TransportClient(
-                HttpClient.newBuilder().build(),
+                httpClient,
                 actor.accessToken()
         );
         this.eventHandler = new EventHandler();
         this.commandHandler = new CommandHandler(eventHandler);
-        this.longPoll = new LongPollClient(httpTransport, eventHandler);
+        this.longPoll = new LongPollClient(httpClient, eventHandler);
     }
 
     private void postFire() {
