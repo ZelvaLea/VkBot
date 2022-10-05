@@ -1,73 +1,144 @@
 package zelvalea.bot.events;
 
-import zelvalea.utils.ConcurrentEnumMap;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
+import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 public class EventHandler {
-    private final ConcurrentMap<EventPriority, EventConsumers> handlers =
-            new ConcurrentEnumMap<>(EventPriority.class);
+    private final ReadWriteLock rwl = new ReentrantReadWriteLock();
+
+    private final Map<Class<? extends Event>, EventStack> handlers
+            = new IdentityHashMap<>();
 
     @SuppressWarnings("unchecked")
-    public void registerEvent(Listener listener) {
-        Class<?> klass = listener.getClass();
-        for (Method method : klass.getDeclaredMethods()) {
-            method.setAccessible(true);
-            if (!method.isAnnotationPresent(EventLabel.class) ||
-                    method.getParameterCount() < 1) {
-                continue;
+    public void registerListener(Listener listener) {
+        Method[] methods = listener
+                .getClass()
+                .getDeclaredMethods();
+
+        final Lock w = rwl.writeLock();
+
+        w.lock();
+        try {
+            for (Method method : methods) {
+                method.setAccessible(true);
+                if (!method.isAnnotationPresent(EventLabel.class) ||
+                        method.getParameterCount() < 1) {
+                    continue;
+                }
+                Class<?> klass = method.getParameterTypes()[0];
+                if (!Event.class.isAssignableFrom(klass)) {
+                    continue;
+                }
+                Class<? extends Event> eventType = (Class<? extends Event>) klass;
+                EventLabel label = method.getAnnotation(EventLabel.class);
+
+                assert label != null;
+
+                EventConsumer consumer = new EventConsumer(
+                        listener,
+                        method,
+                        label.ignoreCancelled()
+                );
+
+                handlers.computeIfAbsent(
+                        eventType, k -> new EventStack()
+                ).pushEvent(label.priority(), consumer);
             }
-            Class<?> e_type = method.getParameterTypes()[0];
-            if (!Event.class.isAssignableFrom(e_type)) {
-                continue;
+        } finally {
+            w.unlock();
+        }
+    }
+
+    public void unregisterListener(Listener listener) {
+        final Lock w = rwl.writeLock();
+
+        w.lock();
+        try {
+            handlers.values().removeIf(v -> {
+                v.unregisterListener(listener);
+
+                return v.stack.isEmpty();
+            });
+        } finally {
+            w.unlock();
+        }
+    }
+
+    public void fire(Event... events) {
+        final Lock r = rwl.readLock();
+
+        r.lock();
+        try {
+            for (Event event : events) {
+
+                EventStack stack = handlers.get(event.getClass());
+
+                if (stack == null) continue;
+
+                stack.tryFire(event);
             }
-            EventLabel label = method.getAnnotation(EventLabel.class);
-            handlers.computeIfAbsent(
-                    label.priority(), f -> new EventConsumers()
-            ).addConsumer((Class<? extends Event>) e_type,
-                    event -> {
-                        if (event instanceof Cancellable r &&
-                                r.isCancelled() &&
-                                label.ignoreCancelled()) {
-                            return;
-                        }
-                        try {
-                            method.invoke(listener, event);
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            e.printStackTrace();
-                        }
+        } finally {
+            r.unlock();
+        }
+
+    }
+
+    private static class EventStack {
+        private final EnumMap<EventPriority, Collection<EventConsumer>>
+                stack = new EnumMap<>(EventPriority.class);
+
+        void pushEvent(
+                EventPriority priority,
+                EventConsumer consumer) {
+            stack.computeIfAbsent(
+                    priority, k -> new LinkedList<>()
+            ).add(consumer);
+        }
+
+        void unregisterListener(Listener listener) {
+            stack.values().removeIf(collection -> {
+
+                collection.removeIf(x -> x.source == listener);
+
+                return collection.isEmpty();
             });
         }
-    }
-    public void callEvent(Event e) {
-        // keeps order
-        handlers.forEach((p,u) -> {
-            Queue<Consumer<Event>> q = u.getConsumers(e);
-            if (q == null)
-                return;
-            q.forEach(x -> x.accept(e));
-        });
-    }
 
-
-    private static class EventConsumers {
-        final ConcurrentMap<Class<? extends Event>, Queue<Consumer<Event>>> map
-                = new ConcurrentHashMap<>();
-
-        void addConsumer(Class<? extends Event> type, Consumer<Event> handler) {
-            map.computeIfAbsent(
-                    type,
-                    x -> new ConcurrentLinkedQueue<>()
-            ).add(handler);
+        void tryFire(Event event) {
+            stack.forEach((k,v) -> v.forEach(e -> e.accept(event)));
         }
-        Queue<Consumer<Event>> getConsumers(Event event) {
-            return map.get(event.getClass());
+    }
+
+    private static final class EventConsumer
+            implements Consumer<Event> {
+        final Listener source;
+        final Method invoker;
+        final boolean ignoreCancelled;
+
+        EventConsumer(Listener source,
+                      Method invoker,
+                      boolean ignoreCancelled) {
+            this.source = source;
+            this.invoker = invoker;
+            this.ignoreCancelled = ignoreCancelled;
+        }
+        @Override
+        public void accept(Event event) {
+            if (ignoreCancelled &&
+                    event instanceof Cancellable &&
+                    (((Cancellable) event).isCancelled())) {
+                return;
+            }
+            try {
+                invoker.invoke(source, event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

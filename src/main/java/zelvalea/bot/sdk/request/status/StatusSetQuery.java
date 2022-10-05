@@ -1,9 +1,10 @@
 package zelvalea.bot.sdk.request.status;
 
 import zelvalea.bot.sdk.request.Request;
+import zelvalea.bot.sdk.response.Response;
 
 public final class StatusSetQuery
-        extends Request<Integer> {
+        extends Request<Response<Integer>> {
 
     public StatusSetQuery(String text) {
         super("status.set");

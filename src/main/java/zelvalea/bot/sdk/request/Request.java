@@ -1,23 +1,25 @@
 package zelvalea.bot.sdk.request;
 
+import zelvalea.bot.sdk.response.Response;
+
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class Request<R> {
-    private final Class<R> respType;
+public class Request<R extends Response<?>> {
+    private final Type respType;
     private final String method;
     private final Map<String, String> params
             = new HashMap<>();
 
-    @SuppressWarnings("unchecked")
     public Request(String method) {
         ParameterizedType pt = ((ParameterizedType) this.getClass()
                 .getGenericSuperclass());
-        this.respType = (Class<R>) pt.getActualTypeArguments()[0];
+        this.respType = pt.getActualTypeArguments()[0];
         this.method = method;
     }
 
@@ -25,7 +27,7 @@ public class Request<R> {
         return method;
     }
 
-    public Class<R> getResponseType() {
+    public Type getResponseType() {
         return respType;
     }
     public String toBody() {

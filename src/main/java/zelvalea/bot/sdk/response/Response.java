@@ -1,6 +1,6 @@
 package zelvalea.bot.sdk.response;
 
-import zelvalea.bot.sdk.objects.ApiError;
+import zelvalea.bot.sdk.model.ApiError;
 
 public class Response<V> {
     private V response;

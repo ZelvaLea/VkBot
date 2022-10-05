@@ -7,16 +7,12 @@ import zelvalea.bot.sdk.TransportClient;
 import zelvalea.bot.sdk.longpoll.LongPollClient;
 import zelvalea.bot.sdk.request.longpoll.GroupLongPollServerRequest;
 
-import java.io.IOException;
 import java.net.http.HttpClient;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Bot extends Thread { // todo: Fiber?
+public class Bot {
     public static final Logger LOGGER = Logger.getLogger("Bot");
-
-    private static final AtomicInteger ids = new AtomicInteger();
     private final EventHandler eventHandler;
     private final CommandHandler commandHandler;
     private final LongPollClient longPoll;
@@ -24,7 +20,6 @@ public class Bot extends Thread { // todo: Fiber?
     private final Actor actor;
 
     public Bot(HttpClient httpClient, Actor actor) {
-        super("Bot-Worker-"+ids.getAndIncrement());
         this.actor = actor;
         this.httpTransport = new TransportClient(
                 httpClient,
@@ -35,17 +30,17 @@ public class Bot extends Thread { // todo: Fiber?
         this.longPoll = new LongPollClient(httpClient, eventHandler);
     }
 
-    private void postFire() {
+    private void tryFire() {
         httpTransport
                 .sendRequestAsync(new GroupLongPollServerRequest(actor.id()))
                 .whenComplete((r,t) -> {
                     if (t != null) {
                         LOGGER.log(Level.SEVERE, "A connection error has occurred");
-                        postFire();
+                        tryFire();
                     } else {
                         var response
                                 = r.getResponse();
-                        tryFire(response.getServer(),
+                        postFire(response.getServer(),
                                 response.getKey(),
                                 response.getTs()
                         );
@@ -53,23 +48,19 @@ public class Bot extends Thread { // todo: Fiber?
                 });
     }
 
-    private void tryFire(String server, String key, int ts) {
-        if (super.isInterrupted())
-            return;
-        try {
-            var r = longPoll.postEvents(server,key,ts);
-            tryFire(server,key,r.timestamp());
-        } catch (IOException | InterruptedException e) {
-            postFire();
-        }
+    private void postFire(String server, String key, int ts) {
+        longPoll.postEvents(server,key,ts)
+                .whenComplete((r,t) -> {
+                    if (t != null) {
+                        tryFire();
+                    } else {
+                        postFire(server, key, r.timestamp());
+                    }
+                });
     }
 
-    @Override
-    public void run() {
-        postFire();
-        try {
-            join();
-        } catch (InterruptedException ignored) {}
+    public void start() {
+        tryFire();
     }
 
     public CommandHandler getCommandHandler() {

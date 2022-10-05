@@ -22,7 +22,7 @@ public class CommandHandler {
 
     public CommandHandler(EventHandler eventHandler) {
         this.eventHandler = eventHandler;
-        eventHandler.registerEvent(new CommandListener());
+        eventHandler.registerListener(new CommandListener());
     }
 
     public void registerCommand(Command command) {

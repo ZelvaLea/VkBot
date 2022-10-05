@@ -5,9 +5,8 @@ import zelvalea.bot.events.AbstractEvent;
 import zelvalea.bot.events.Event;
 import zelvalea.bot.events.EventHandler;
 import zelvalea.bot.events.messages.NewMessageEvent;
-import zelvalea.bot.sdk.objects.LongPollEvent;
+import zelvalea.bot.sdk.model.LongPollEvent;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,6 +15,7 @@ import java.net.http.HttpResponse;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public record LongPollClient(
         HttpClient httpClient,
@@ -28,11 +28,11 @@ public record LongPollClient(
             .registerTypeAdapter(LongPollEvent.class, new EventDeserializer())
             .create();
 
-    public LongPollClient.LongPollResponse postEvents(
+    public CompletableFuture<LongPollClient.LongPollResponse> postEvents(
             String server,
             String key,
             int timestamp
-    ) throws IOException, InterruptedException {
+    ) {
         URI uri = URI.create(String.format(LP_QUERY,
                 server, key, timestamp, WAIT_TIME
         ));
@@ -40,15 +40,16 @@ public record LongPollClient(
                 .newBuilder(uri)
                 .GET()
                 .build();
-        HttpResponse<String> response = httpClient
-                .send(hr, HttpResponse.BodyHandlers.ofString());
-        var res_obj =
-                GSON.fromJson(response.body(), LongPollResponse.class);
-        // ForkJoinPool executor for event handling is nice
-        res_obj.events()
-                .parallelStream()
-                .forEach(x -> eventHandler.callEvent(x.object()));
-        return res_obj;
+        return httpClient.sendAsync(hr, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    var res_obj =
+                            GSON.fromJson(response.body(), LongPollResponse.class);
+                    // ForkJoinPool executor for event handling is nice
+                    res_obj.events()
+                            .parallelStream()
+                            .forEach(x -> eventHandler.fire(x.object()));
+                    return res_obj;
+                });
     }
     private static class EventDeserializer
             implements JsonDeserializer<LongPollEvent> {

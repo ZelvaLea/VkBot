@@ -1,4 +1,4 @@
-package zelvalea.bot.sdk.objects;
+package zelvalea.bot.sdk.model;
 
 import zelvalea.bot.events.Event;
 

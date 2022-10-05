@@ -1,4 +1,4 @@
-package zelvalea.bot.sdk.objects;
+package zelvalea.bot.sdk.model;
 
 public class ApiError {
     private int error_code;
