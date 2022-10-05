@@ -30,6 +30,18 @@ public class Bot {
         this.longPoll = new LongPollClient(httpClient, eventHandler);
     }
 
+    public void start() { tryFire(); }
+
+    public CommandHandler getCommandHandler() { return commandHandler; }
+
+    public EventHandler getEventHandler() { return eventHandler; }
+
+    public LongPollClient getLongPoll() { return longPoll; }
+
+    public TransportClient getHttpTransport() { return httpTransport; }
+
+    public Actor getActor() { return actor; }
+
     private void tryFire() {
         httpTransport
                 .sendRequestAsync(new GroupLongPollServerRequest(actor.id()))
@@ -57,29 +69,5 @@ public class Bot {
                         postFire(server, key, r.timestamp());
                     }
                 });
-    }
-
-    public void start() {
-        tryFire();
-    }
-
-    public CommandHandler getCommandHandler() {
-        return commandHandler;
-    }
-
-    public EventHandler getEventHandler() {
-        return eventHandler;
-    }
-
-    public LongPollClient getLongPoll() {
-        return longPoll;
-    }
-
-    public TransportClient getHttpTransport() {
-        return httpTransport;
-    }
-
-    public Actor getActor() {
-        return actor;
     }
 }
