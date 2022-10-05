@@ -114,19 +114,11 @@ public class EventHandler {
         }
     }
 
-    private static final class EventConsumer
-            implements Consumer<Event> {
-        final Listener source;
-        final Method invoker;
-        final boolean ignoreCancelled;
-
-        EventConsumer(Listener source,
-                      Method invoker,
-                      boolean ignoreCancelled) {
-            this.source = source;
-            this.invoker = invoker;
-            this.ignoreCancelled = ignoreCancelled;
-        }
+    private record EventConsumer(
+            Listener source,
+            Method invoker,
+            boolean ignoreCancelled
+    ) implements Consumer<Event> {
         @Override
         public void accept(Event event) {
             if (ignoreCancelled &&
