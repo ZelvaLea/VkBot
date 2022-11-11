@@ -6,6 +6,7 @@ import zelvalea.bot.events.Event;
 import zelvalea.bot.events.EventHandler;
 import zelvalea.bot.events.messages.NewMessageEvent;
 import zelvalea.bot.sdk.model.LongPollEvent;
+import zelvalea.bot.utils.SequentialScope;
 
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -16,41 +17,54 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
-public record LongPollClient(
-        HttpClient httpClient,
-        EventHandler eventHandler
-) {
-    private static final String LP_QUERY =
-            "%s?act=a_check&key=%s&ts=%s&wait=%d";
-    private static final int WAIT_TIME = 25;
+public class LongPollClient {
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(LongPollEvent.class, new EventDeserializer())
             .create();
+    private final HttpClient client;
+    private final EventHandler eventHandler;
+    private final SequentialScope scope;
 
+    public LongPollClient(HttpClient client,
+                          EventHandler eventHandler,
+                          SequentialScope scope) {
+        this.client = client;
+        this.eventHandler = eventHandler;
+        this.scope = scope;
+    }
     public CompletableFuture<LongPollClient.LongPollResponse> postEvents(
             String server,
-            String key,
-            int timestamp
+            Map<String,Object> params
     ) {
-        URI uri = URI.create(String.format(LP_QUERY,
-                server, key, timestamp, WAIT_TIME
-        ));
+        String parse = params
+                .entrySet()
+                .stream()
+                .map((e) -> e.getKey() + '=' + e.getValue())
+                .collect(Collectors.joining("&"));
+
+        URI uri = URI.create(server + '?' + parse);
+
         HttpRequest hr = HttpRequest
                 .newBuilder(uri)
                 .GET()
                 .build();
-        return httpClient.sendAsync(hr, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
+
+        return scope.runOrSchedule(() -> client
+                .sendAsync(hr, HttpResponse.BodyHandlers.ofString())
+                // ForkJoinPool executor for event handling is nice
+                .thenApplyAsync(response -> {
+                    System.out.println(response.body());
                     var res_obj =
                             GSON.fromJson(response.body(), LongPollResponse.class);
-                    // ForkJoinPool executor for event handling is nice
-                    res_obj.events()
-                            .parallelStream()
-                            .forEach(x -> eventHandler.fire(x.object()));
+                    res_obj
+                            .events()
+                            .forEach(t -> eventHandler.fire(t.object()));
                     return res_obj;
-                });
+                }));
     }
+
     private static class EventDeserializer
             implements JsonDeserializer<LongPollEvent> {
         static final Map<String, Class<? extends Event>> MAP_EVENTS = Map.of(

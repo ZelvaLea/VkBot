@@ -10,10 +10,18 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
-public record TransportClient(HttpClient client, String accessToken) {
+public class TransportClient {
     private static final String API_VERSION = "5.131";
     private static final String API_URL = "https://api.vk.com/method/";
     private static final Gson GSON = new Gson();
+
+    private final HttpClient client;
+    private final String accessToken;
+
+    public TransportClient(HttpClient client, String accessToken) {
+        this.client = client;
+        this.accessToken = accessToken;
+    }
 
     public <R extends Response<?>> CompletableFuture<R> sendRequestAsync(Request<R> request) {
 
@@ -29,5 +37,9 @@ public record TransportClient(HttpClient client, String accessToken) {
         return client
                 .sendAsync(hr, HttpResponse.BodyHandlers.ofString())
                 .thenApply(r -> GSON.fromJson(r.body(), request.getResponseType()));
+    }
+
+    public HttpClient getHttpClient() {
+        return client;
     }
 }
