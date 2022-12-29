@@ -33,7 +33,6 @@ public class TransportClient {
                                 "&access_token="+accessToken+"&v="+API_VERSION
                 ))
                 .build();
-
         return client
                 .sendAsync(hr, HttpResponse.BodyHandlers.ofString())
                 .thenApply(r -> GSON.fromJson(r.body(), request.getResponseType()));

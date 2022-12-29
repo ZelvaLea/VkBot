@@ -4,7 +4,7 @@ import com.google.gson.*;
 import zelvalea.bot.events.AbstractEvent;
 import zelvalea.bot.events.Event;
 import zelvalea.bot.events.EventHandler;
-import zelvalea.bot.events.messages.NewMessageEvent;
+import zelvalea.bot.events.longpoll.NewMessageEvent;
 import zelvalea.bot.sdk.model.LongPollEvent;
 import zelvalea.bot.utils.SequentialScope;
 
@@ -55,7 +55,6 @@ public class LongPollClient {
                 .sendAsync(hr, HttpResponse.BodyHandlers.ofString())
                 // ForkJoinPool executor for event handling is nice
                 .thenApplyAsync(response -> {
-                    System.out.println(response.body());
                     var res_obj =
                             GSON.fromJson(response.body(), LongPollResponse.class);
                     res_obj

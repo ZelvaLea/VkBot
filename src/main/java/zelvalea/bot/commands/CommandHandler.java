@@ -4,7 +4,7 @@ import zelvalea.bot.events.EventHandler;
 import zelvalea.bot.events.EventLabel;
 import zelvalea.bot.events.EventPriority;
 import zelvalea.bot.events.Listener;
-import zelvalea.bot.events.messages.NewMessageEvent;
+import zelvalea.bot.events.longpoll.NewMessageEvent;
 import zelvalea.bot.sdk.response.messages.Message;
 
 import java.util.Collections;

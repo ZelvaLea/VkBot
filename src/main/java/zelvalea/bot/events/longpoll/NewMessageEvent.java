@@ -1,4 +1,4 @@
-package zelvalea.bot.events.messages;
+package zelvalea.bot.events.longpoll;
 
 import zelvalea.bot.events.Event;
 import zelvalea.bot.sdk.response.messages.Message;

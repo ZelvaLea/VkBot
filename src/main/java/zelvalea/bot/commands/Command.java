@@ -1,6 +1,6 @@
 package zelvalea.bot.commands;
 
-import zelvalea.bot.events.messages.NewMessageEvent;
+import zelvalea.bot.events.longpoll.NewMessageEvent;
 
 import java.util.Collections;
 import java.util.Set;
