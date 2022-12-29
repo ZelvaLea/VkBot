@@ -3,9 +3,7 @@ package zelvalea.impl;
 import zelvalea.bot.Bot;
 import zelvalea.bot.actor.GroupActor;
 import zelvalea.impl.user.StatusUpdater;
-import zelvalea.impl.writer.MessageListener;
 
-import java.io.File;
 import java.net.http.HttpClient;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
