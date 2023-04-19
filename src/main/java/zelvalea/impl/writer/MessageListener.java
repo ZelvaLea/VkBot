@@ -10,14 +10,15 @@ import zelvalea.bot.sdk.response.messages.Message;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +28,7 @@ public class MessageListener implements Listener {
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .create();
-    private final Object lock = new Object();
+    private final ReentrantLock lock = new ReentrantLock();
 
     private final Map<String,String> cache;
 
@@ -46,19 +47,27 @@ public class MessageListener implements Listener {
         try (ScheduledExecutorService pusher =
                      Executors.newScheduledThreadPool(1)) {
             pusher.scheduleWithFixedDelay(() -> {
-                synchronized (lock) {
-                    for (Answer a = first, p; ; ) {
-                        p = a;
-                        if (a == null || (a = a.next) == null) {
-                            break;
-                        } else {
-                            cache.put(p.joiner.toString(), a.joiner.toString());
-                        }
-                    }
-                    first = last;
 
+                boolean acquired = lock.tryLock();
+                if (acquired) {
                     try {
-                        Files.writeString(file.toPath(), GSON.toJson(new Sentences(cache)));
+                        for (Answer a = first, p = a; ; p = a) {
+                            if (a == null ||
+                                    (a = a.next) == null)
+                                break;
+                            else
+                                cache.put(
+                                        p.joiner.toString(),
+                                        a.joiner.toString());
+                        }
+                        first = last;
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+                if (acquired) {
+                    try {
+                        GSON.toJson(new Sentences(cache), new FileWriter(file));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -72,17 +81,21 @@ public class MessageListener implements Listener {
     public void onMsg(NewMessageEvent e) {
         Message msg = e.getMessage();
         String text = msg.getText();
-        if (text.isEmpty()) return;
-        int peerId = msg.getFromId();
-        LOGGER.log(Level.INFO, peerId + " : " + text);
-        synchronized (lock) {
-            Answer prev = last;
-            if (prev == null) {
-                first = last = new Answer(peerId, text);
-            } else if (prev.id == peerId) {
-                prev.joiner.add(text);
-            } else {
-                last = prev.next = new Answer(peerId, text);
+        if (!text.isEmpty()) {
+            int peerId = msg.getFromId();
+            LOGGER.log(Level.INFO, peerId + " : " + text);
+
+            lock.lock();
+            try {
+                Answer prev = last;
+                if (prev == null)
+                    first = last = new Answer(peerId, text);
+                else if (prev.id == peerId)
+                    prev.joiner.add(text);
+                else
+                    last = prev.next = new Answer(peerId, text);
+            } finally {
+                lock.unlock();
             }
         }
     }
