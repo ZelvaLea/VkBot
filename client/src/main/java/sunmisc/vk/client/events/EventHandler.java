@@ -7,8 +7,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EventHandler {
+    private static final Logger LOGGER
+            = Logger.getLogger("EventHandler");
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
 
     private final Map<Class<? extends Event>, EventStack> handlers
@@ -27,14 +31,13 @@ public class EventHandler {
             for (Method method : methods) {
                 method.setAccessible(true);
                 if (!method.isAnnotationPresent(EventLabel.class) ||
-                        method.getParameterCount() < 1) {
+                        method.getParameterCount() < 1)
                     continue;
-                }
                 Class<?> klass = method.getParameterTypes()[0];
-                if (!Event.class.isAssignableFrom(klass)) {
+                if (!Event.class.isAssignableFrom(klass))
                     continue;
-                }
-                Class<? extends Event> eventType = (Class<? extends Event>) klass;
+                Class<? extends Event> eventType =
+                        (Class<? extends Event>) klass;
                 EventLabel label = method.getAnnotation(EventLabel.class);
 
                 assert label != null;
@@ -42,8 +45,7 @@ public class EventHandler {
                 EventConsumer consumer = new EventConsumer(
                         listener,
                         method,
-                        label.ignoreCancelled()
-                );
+                        label.ignoreCancelled());
 
                 handlers.computeIfAbsent(
                         eventType, k -> new EventStack()
@@ -103,7 +105,7 @@ public class EventHandler {
         void unregisterListener(Listener listener) {
             stack.values().removeIf(collection -> {
 
-                collection.removeIf(x -> x.source == listener);
+                collection.removeIf(x -> Objects.equals(x.source, listener));
 
                 return collection.isEmpty();
             });
@@ -122,13 +124,14 @@ public class EventHandler {
         @Override
         public void accept(Event event) {
             if (ignoreCancelled &&
-                    event instanceof Cancellable &&
-                    (((Cancellable) event).isCancelled()))
+                    event instanceof Cancellable cancellable &&
+                    cancellable.isCancelled())
                 return;
             try {
                 invoker.invoke(source, event);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE,
+                        "Exception occurred while invoking method:", e);
             }
         }
     }

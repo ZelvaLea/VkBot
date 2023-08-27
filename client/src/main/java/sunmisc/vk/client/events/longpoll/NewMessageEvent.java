@@ -1,12 +1,10 @@
 package sunmisc.vk.client.events.longpoll;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import sunmisc.vk.client.events.Event;
 import sunmisc.vk.client.model.messages.Message;
 
-public class NewMessageEvent implements Event {
-    private Message message;
-
-    public Message getMessage() {
-        return message;
-    }
-}
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record NewMessageEvent(
+        Message message
+) implements Event { }

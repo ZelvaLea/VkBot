@@ -1,16 +1,12 @@
 package zelvalea.impl.writer;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.stream.JsonReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import sunmisc.vk.client.events.EventLabel;
 import sunmisc.vk.client.events.Listener;
 import sunmisc.vk.client.events.longpoll.NewMessageEvent;
 import sunmisc.vk.client.model.messages.Message;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,25 +21,24 @@ import java.util.logging.Logger;
 public class MessageListener implements Listener {
     private static final Logger LOGGER = Logger.getLogger("chat");
 
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .create();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final ReentrantLock lock = new ReentrantLock();
 
-    private final Map<String,String> cache;
+    private final Map<String,String> accumulate;
 
     private Answer first, last;
 
     public MessageListener(File file) {
         Map<String, String> map;
-        try (JsonReader reader = new JsonReader(new FileReader(file))) {
-            Sentences sentences = GSON.fromJson(reader, Sentences.class);
+
+        try {
+            Sentences sentences = MAPPER.readValue(file, Sentences.class);
             map = sentences.sentences;
         } catch (IOException e) {
             map = new HashMap<>();
         }
 
-        cache = map;
+        accumulate = map;
         try (ScheduledExecutorService pusher =
                      Executors.newScheduledThreadPool(1)) {
             pusher.scheduleWithFixedDelay(() -> {
@@ -54,7 +49,7 @@ public class MessageListener implements Listener {
                                     (a = a.next) == null)
                                 break;
                             else
-                                cache.put(
+                                accumulate.put(
                                         p.joiner.toString(),
                                         a.joiner.toString());
                         }
@@ -63,7 +58,7 @@ public class MessageListener implements Listener {
                         lock.unlock();
                     }
                     try {
-                        GSON.toJson(new Sentences(cache), new FileWriter(file));
+                        MAPPER.writeValue(file, new Sentences(accumulate));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -75,7 +70,7 @@ public class MessageListener implements Listener {
 
     @EventLabel
     public void onMsg(NewMessageEvent e) {
-        Message msg = e.getMessage();
+        Message msg = e.message();
         String text = msg.text();
         if (!text.isEmpty()) {
             int peerId = msg.from_id();
@@ -110,17 +105,5 @@ public class MessageListener implements Listener {
         }
     }
 
-    private static class Sentences {
-        private Map<String, String> sentences;
-
-        public Sentences() {}
-
-        public Sentences(Map<String,String> sentences) {
-            this.sentences = sentences;
-        }
-
-        public Map<String, String> getSentences() {
-            return sentences;
-        }
-    }
+    private record Sentences(Map<String, String> sentences) { }
 }

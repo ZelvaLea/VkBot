@@ -26,18 +26,18 @@ public class CommandHandler {
     }
 
     public void registerCommand(Command command) {
-        commandMap.put(command.getName(), command);
-        Set<String> alias = command.getAlias();
+        commandMap.put(command.name(), command);
+        Set<String> alias = command.alias();
         if (alias == null)
             return;
         alias.forEach(a -> commandMap.put(a, command));
     }
 
-    public Optional<Command> getCommand(String name) {
+    public Optional<Command> command(String name) {
         return Optional.ofNullable(commandMap.get(name));
     }
 
-    public Map<String, Command> getCommandMap() {
+    public Map<String, Command> commandMap() {
         return Collections.unmodifiableMap(commandMap);
     }
     private class CommandListener implements Listener {
@@ -45,20 +45,20 @@ public class CommandHandler {
 
         @EventLabel(priority = EventPriority.HIGHEST)
         public void onMessage(NewMessageEvent event) {
-            Message msg = event.getMessage();
+            Message msg = event.message();
             String text = msg.text();
             if (text.length() < 2 ||
-                    (CMD_MASK >> text.charAt(0) & 1) == 0) {
+                    (CMD_MASK >> text.charAt(0) & 1) == 0)
                 return;
-            }
             String[] args = text.substring(1).split(" ");
-            getCommand(args[0]).ifPresent(cmd -> {
-                int len = args.length;
-                String[] args0 = new String[len - 1];
-                System.arraycopy(args, 1, args0, 0, len - 1);
-                cmd.execute(args0, event);
-                // eventHandler.callEvent(new CommandEvent());
-            });
+            command(args[0])
+                    .ifPresent(cmd -> {
+                        int len = args.length;
+                        String[] args0 = new String[len - 1];
+                        System.arraycopy(args, 1, args0, 0, len - 1);
+                        cmd.execute(args0, event);
+                        // eventHandler.callEvent(new CommandEvent());
+                    });
         }
     }
 }

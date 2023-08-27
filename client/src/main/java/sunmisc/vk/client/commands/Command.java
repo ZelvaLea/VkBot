@@ -4,17 +4,16 @@ import sunmisc.vk.client.events.longpoll.NewMessageEvent;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 public interface Command {
-    String getName();
+    String name();
 
-    default Set<String> getAlias() {
+    default Set<String> alias() {
         return Collections.emptySet();
     }
 
-    String getDescription();
+    String description();
 
-    CompletableFuture<?> execute(String[] args, NewMessageEvent event);
+    void execute(String[] args, NewMessageEvent event);
 
 }

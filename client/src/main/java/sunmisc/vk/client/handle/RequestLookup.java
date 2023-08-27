@@ -78,8 +78,7 @@ public class RequestLookup {
     }
 
     private record PropertyList(
-            Map<Class<? extends Annotation>, List<? extends FieldAccessor<?>>> fields
-    ) {
+            Map<Class<? extends Annotation>, List<? extends FieldAccessor<?>>> fields) {
 
         @SuppressWarnings("unchecked")
         <T extends Annotation> List<FieldAccessor<T>>
