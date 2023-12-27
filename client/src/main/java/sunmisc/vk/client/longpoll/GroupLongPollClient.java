@@ -9,14 +9,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import sunmisc.vk.client.Bot;
+import sunmisc.vk.client.Methods;
+import sunmisc.vk.client.dynamo.longpoll.GroupLongPollServerRequest;
 import sunmisc.vk.client.events.AbstractEvent;
 import sunmisc.vk.client.events.Event;
-import sunmisc.vk.client.events.EventHandler;
+import sunmisc.vk.client.events.Events;
 import sunmisc.vk.client.events.longpoll.NewMessageEvent;
 import sunmisc.vk.client.model.LongPollEvent;
-import sunmisc.vk.client.owner.Owner;
-import sunmisc.vk.client.request.longpoll.GroupLongPollServerRequest;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -46,26 +45,19 @@ public class GroupLongPollClient implements LongPollClient {
         m.registerModules(module, new JavaTimeModule());
         MAPPER = m;
     }
-
-    private final HttpClient client;
-    private final Bot bot;
-    private final EventHandler eventHandler;
-    private final Owner owner;
-
+    private final Events events;
+    private final int id;
+    private final Methods methods;
     private volatile boolean interrupted;
 
-
-    public GroupLongPollClient(HttpClient client,
-                               Bot bot,
-                               Owner owner,
-                               EventHandler eventHandler) {
-        this.client = client;
-        this.bot = bot;
-        this.owner = owner;
-        this.eventHandler = eventHandler;
+    public GroupLongPollClient(Methods methods,
+                               Events events, int id) {
+        this.methods = methods;
+        this.events = events;
+        this.id = id;
     }
     private CompletableFuture<LongPollResponse>
-    postEvents(String server, Map<String,Object> params) {
+    postEvents(HttpClient client, String server, Map<String,Object> params) {
         String parse = params
                 .entrySet()
                 .stream()
@@ -88,7 +80,7 @@ public class GroupLongPollClient implements LongPollClient {
                                 response.body(),
                                 LongPollResponse.class);
                         resp.updates()
-                                .forEach(t -> eventHandler.fire(t.object()));
+                                .forEach(t -> events.fire(t.object()));
                         return resp;
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
@@ -97,28 +89,27 @@ public class GroupLongPollClient implements LongPollClient {
     }
 
     @Override
-    public void tryFire() {
+    public void start() {
         if (isInterrupted())
             throw new IllegalStateException("client has been closed");
-        bot.httpTransport()
-                .sendAsync(new GroupLongPollServerRequest(owner.id()))
-                .whenComplete((response,t) -> {
-                    if (t != null) {
-                        LOGGER.log(Level.SEVERE,
-                                "A connection error has occurred ", t);
-                        tryFire();
-                    } else {
-                        postFire(response.server(),
-                                response.key(),
-                                response.timestamp()
-                        );
-                    }
-                });
+
+        try {
+            var response = methods
+                    .send(new GroupLongPollServerRequest(id));
+            postFire(response.server(),
+                    response.key(),
+                    response.timestamp());
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE,
+                    "A connection error has occurred ", e);
+            start();
+        }
     }
 
     private void postFire(String server, String key, int ts) {
         if (!isInterrupted()) {
-            postEvents(server, Map.of(
+            HttpClient client = HttpClient.newHttpClient();
+            postEvents(client, server, Map.of(
                     "key", key,
                     "ts", ts,
                     "wait", WAIT_TIME,
@@ -126,7 +117,7 @@ public class GroupLongPollClient implements LongPollClient {
             ).whenComplete((r, t) -> {
                 if (t != null) {
                     LOGGER.log(Level.WARNING, "Trying to get a server ", t);
-                    tryFire();
+                    start();
                 } else
                     postFire(server, key, r.timestamp());
             });

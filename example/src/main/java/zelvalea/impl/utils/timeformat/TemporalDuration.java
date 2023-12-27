@@ -1,33 +1,22 @@
 package zelvalea.impl.utils.timeformat;
 
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import zelvalea.impl.text.Text;
 
-public final class TemporalDuration {
+import java.time.Duration;
+
+public final class TemporalDuration implements Text {
     private static final TimeFormatter[] DEFAULT_FORMAT = {
             TimeFormatter.DAYS,
             TimeFormatter.HOURS,
             TimeFormatter.MINUTES,
     };
-
-    private Duration duration;
+    private final Duration duration;
 
     public TemporalDuration(Duration duration) {
-        if(duration == null) {
-            return;
-        }
         this.duration = duration;
     }
-    public static TemporalDuration of(int month, int day, int hour, int minute) {
-        LocalDateTime startInclusive = LocalDateTime.now();
-        LocalDateTime endExclusive = LocalDateTime.of(startInclusive.getYear(), month, day, hour, minute);
-        if(startInclusive.toEpochSecond(ZoneOffset.UTC) > endExclusive.toEpochSecond(ZoneOffset.UTC)) {
-            endExclusive = endExclusive.plusYears(1);
-        }
-        return new TemporalDuration(Duration.between(startInclusive, endExclusive));
-    }
+
     public String toFormat(TimeFormatter... timeFormatter) {
         StringBuilder buf = new StringBuilder();
         for(TimeFormatter formatter : timeFormatter) {
@@ -52,11 +41,14 @@ public final class TemporalDuration {
         }
         return buf.toString();
     }
-    public String toFormat() {
+    @Override
+    public String asString() {
         return toFormat(DEFAULT_FORMAT);
     }
     @Override
     public String toString() {
         return toFormat();
     }
+
+
 }

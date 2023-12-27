@@ -1,3 +1,12 @@
 package sunmisc.vk.client.events;
 
-public interface Listener { }
+import java.lang.reflect.Method;
+import java.util.stream.Stream;
+
+public interface Listener {
+
+    default Stream<Method> methods() {
+        Method[] methods = getClass().getDeclaredMethods();
+        return Stream.of(methods);
+    }
+}

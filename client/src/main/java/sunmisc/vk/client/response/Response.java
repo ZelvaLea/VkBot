@@ -1,7 +1,8 @@
 package sunmisc.vk.client.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import sunmisc.vk.client.model.ApiError;
+import sunmisc.vk.client.request.Input;
 
-@JsonIgnoreProperties
-public record Response<R>(R response, ApiError error) { }
+public interface Response extends Input {
+
+    int status();
+}
