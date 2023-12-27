@@ -1,8 +1,8 @@
-package zelvalea.impl.user;
+package sunmiscv.impl;
 
-import zelvalea.impl.text.Concat;
-import zelvalea.impl.text.Text;
-import zelvalea.impl.utils.timeformat.TemporalDuration;
+import sunmiscv.impl.text.Concat;
+import sunmiscv.impl.text.Text;
+import sunmiscv.impl.text.TemporalDuration;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

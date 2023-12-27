@@ -1,4 +1,4 @@
-package zelvalea.impl.text;
+package sunmiscv.impl.text;
 
 @FunctionalInterface
 public interface Text {

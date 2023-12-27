@@ -1,4 +1,4 @@
-package zelvalea.impl.text;
+package sunmiscv.impl.text;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
