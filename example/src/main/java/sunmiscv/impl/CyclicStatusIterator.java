@@ -2,11 +2,10 @@ package sunmiscv.impl;
 
 import sunmiscv.impl.text.Concat;
 import sunmiscv.impl.text.Text;
-import sunmiscv.impl.text.TemporalDuration;
+import sunmiscv.impl.text.UntilNewYear;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Iterator;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class CyclicStatusIterator implements Iterator<Text> {
 
@@ -17,17 +16,16 @@ public class CyclicStatusIterator implements Iterator<Text> {
 
     @Override
     public Text next() {
-        LocalDateTime time = LocalDateTime.now();
+        boolean suck = ThreadLocalRandom
+                .current()
+                .nextInt(0, 100) > 75;
 
-        int year = time.getYear() + 1;
-        Duration duration = Duration.between(time,
-                LocalDateTime.of(year, 1, 1, 0, 0));
-
-        return new Concat(
+        return suck ?
+                () -> "Let’s celebrate and suck some dick"
+                : new Concat(
                 () -> "\uD83D\uDC7BДо Нового Года осталось: ",
-                new TemporalDuration(duration),
-                () -> "\uD83D\uDC7B"
-
-        );
+                new UntilNewYear(),
+                () -> "\uD83D\uDC7B");
     }
+
 }

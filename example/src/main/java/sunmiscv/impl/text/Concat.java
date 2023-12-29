@@ -14,7 +14,6 @@ public class Concat implements Text {
 
     @Override
     public String asString() {
-
         return Arrays.stream(texts).map(x -> {
             try {
                 return x.asString();

@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sunmisc.vk</groupId>
-    <artifactId>VkClient</artifactId>
+    <artifactId>malibu</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>example</module>
-        <module>client</module>
+        <module>framework</module>
     </modules>
 
 </project>

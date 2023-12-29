@@ -2,6 +2,7 @@ package sunmiscv.impl.text;
 
 import java.time.Duration;
 
+@SuppressWarnings("forRemoval")
 public enum TimeFormatter {
     DAYS("дней", "день", "дня") {
         @Override

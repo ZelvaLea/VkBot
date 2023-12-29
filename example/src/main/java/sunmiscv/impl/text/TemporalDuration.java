@@ -17,11 +17,10 @@ public final class TemporalDuration implements Text {
 
     public String toFormat(TimeFormatter... timeFormatter) {
         StringBuilder buf = new StringBuilder();
-        for(TimeFormatter formatter : timeFormatter) {
+        for (TimeFormatter formatter : timeFormatter) {
             int x = formatter.to(duration);
-            if (x == 0) {
+            if (x == 0)
                 continue;
-            }
             buf.append(' ').append(x).append(' ');
             if ((x % 100 / 10) == 1) {
                 buf.append(formatter.getPlural());
@@ -29,13 +28,12 @@ public final class TemporalDuration implements Text {
             }
 
             int y = x % 10;
-            if (y == 1) {
+            if (y == 1)
                 buf.append(formatter.getSingular());
-            } else if (y != 0 && y <= 4) {
+            else if (y != 0 && y <= 4)
                 buf.append(formatter.getOther());
-            } else {
+            else
                 buf.append(formatter.getPlural());
-            }
         }
         return buf.toString();
     }
